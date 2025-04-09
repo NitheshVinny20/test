@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Article Viewer</title>
+    <style>
+        /* [Keep your previous CSS unchanged] */
+        .articles-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .article-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        .article-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .article-title {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .article-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .read-more-btn {
+            display: block;
+            width: 120px;
+            margin: 15px auto;
+            padding: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .read-more-btn:hover {
+            background: #0056b3;
+        }
+        .article-full-view {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .article-content {
+            background: white;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 5px;
+            position: relative;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .article-full-title {
+            margin-top: 0;
+            color: #333;
+        }
+        .article-full-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            margin: 20px 0;
+        }
+        .article-text {
+            line-height: 1.6;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="articles-container" id="articlesContainer"></div>
+    <div class="article-full-view" id="articleFullView">
+        <div class="article-content">
+            <button class="close-btn" onclick="closeArticle()">Close</button>
+            <h1 class="article-full-title" id="fullTitle"></h1>
+            <img class="article-full-image" id="fullImage" src="" alt="">
+            <div class="article-text" id="fullText"></div>
+        </div>
+    </div>
+
+    <script>
+        // Adjust the base path based on your GitHub Pages setup
+        const basePath = window.location.pathname.includes('/docs') ? '/your-repo-name/docs' : '/your-repo-name';
+        
+        const articles = [
+            {
+                title: "Article 1",
+                image: "https://via.placeholder.com/300x200",
+                textFile: "article1.txt"
+            },
+            {
+                title: "Article 2",
+                image: "https://via.placeholder.com/300x200",
+                textFile: "article2.txt"
+            }
+        ];
+
+        function createArticleCards() {
+            const container = document.getElementById('articlesContainer');
+            articles.forEach((article, index) => {
+                const card = document.createElement('div');
+                card.className = 'article-card';
+                card.innerHTML = `
+                    <h2 class="article-title">${article.title}</h2>
+                    <button class="read-more-btn" onclick="showFullArticle(${index})">Read More</button>
+                    <img class="article-image" src="${article.image}" alt="${article.title}">
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function showFullArticle(index) {
+            const fullView = document.getElementById('articleFullView');
+            const fullTitle = document.getElementById('fullTitle');
+            const fullImage = document.getElementById('fullImage');
+            const fullText = document.getElementById('fullText');
+
+            fullTitle.textContent = articles[index].title;
+            fullImage.src = articles[index].image;
+            fullText.textContent = 'Loading article...';
+
+            try {
+                // Use repository-relative path
+                const filePath = `${basePath}/${articles[index].textFile}`.replace('//', '/');
+                const response = await fetch(filePath);
+                if (!response.ok) {
+                    throw new Error(`Failed to load ${articles[index].textFile}: ${response.status}`);
+                }
+                const text = await response.text();
+                fullText.textContent = text;
+            } catch (error) {
+                fullText.textContent = `Error: ${error.message}. Check if "${articles[index].textFile}" exists in your repository and the path is correct.`;
+                console.error('Fetch error:', error);
+            }
+
+            fullView.style.display = 'block';
+        }
+
+        function closeArticle() {
+            document.getElementById('articleFullView').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', createArticleCards);
+        document.getElementById('articleFullView').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeArticle();
+        });
+    </script>
+</body>
+</html>
